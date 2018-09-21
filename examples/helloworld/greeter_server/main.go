@@ -23,9 +23,11 @@ package main
 import (
 	"log"
 	"net"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
 	"google.golang.org/grpc/reflection"
 )
@@ -47,7 +49,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	s := grpc.NewServer()
+
+	//s := grpc.NewServer()
+	gopts := []grpc.ServerOption{}
+	gopts = append(gopts, grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             10*time.Second,
+			PermitWithoutStream: false,
+		}))
+
+	/*gopts = append(gopts, grpc.KeepaliveParams(keepalive.ServerParameters{
+                      MaxConnectionIdle:	5*time.Second,
+		      MaxConnectionAge:		1*time.Second,
+		      MaxConnectionAgeGrace:	1*time.Second,
+		      Time:			1*time.Second,
+		      Timeout:			1*time.Second,
+        }))*/
+
+	s := grpc.NewServer(gopts...)
+
 	pb.RegisterGreeterServer(s, &server{})
 	// Register reflection service on gRPC server.
 	reflection.Register(s)
